@@ -1,12 +1,20 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '../context/AuthContext';
-import { ShieldAlert, LogIn, Lock, User } from 'lucide-react';
+import { ShieldAlert, LogIn, Lock, User, Briefcase, UserRound } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
-  const [isLoginView, setIsLoginView] = useState(true);
+  
+  const intent = searchParams.get('intent');
+  const isReserveIntent = intent === 'reserve';
+
+  // If there's an intent to reserve, default to signup view and 'user' role
+  const [isLoginView, setIsLoginView] = useState(!isReserveIntent);
+  const [role, setRole] = useState(isReserveIntent ? 'user' : 'host');
+  
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -17,20 +25,62 @@ export default function Login() {
     setError('');
     setIsLoading(true);
 
-    const endpoint = isLoginView ? '/api/login' : '/api/signup';
+    const endpoint = isLoginView ? '/api/users/login' : '/api/users/signup';
 
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, role: 'host' })
+        body: JSON.stringify({ username, password, role })
       });
 
       const data = await response.json();
 
       if (response.ok) {
         login(data.token, data.user, data.isMongo);
-        navigate('/admin');
+        
+        if (isReserveIntent) {
+          // Perform the reservation automatically
+          const listingId = searchParams.get('listingId');
+          const checkIn = searchParams.get('checkIn');
+          const checkOut = searchParams.get('checkOut');
+          const guests = searchParams.get('guests');
+          const totalCost = searchParams.get('totalCost');
+          const hostId = searchParams.get('hostId') || 'default-host';
+          
+          if (listingId && checkIn && checkOut && guests && totalCost) {
+            try {
+              const resResponse = await fetch('/api/reservations', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${data.token}`
+                },
+                body: JSON.stringify({
+                  listingId,
+                  hostId,
+                  checkIn,
+                  checkOut,
+                  guests: Number(guests),
+                  totalCost: Number(totalCost)
+                })
+              });
+              if (resResponse.ok) {
+                // Redirect to reservations page
+                navigate('/reservations?success=true');
+                return;
+              }
+            } catch (err) {
+              console.error("Failed to reserve after signup", err);
+            }
+          }
+        }
+
+        if (data.user.role === 'admin' || data.user.role === 'host') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
       } else {
         setError(data.error || `Failed to ${isLoginView ? 'login' : 'sign up'}`);
       }
@@ -76,7 +126,7 @@ export default function Login() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full border border-gray-200 focus:border-gray-950 p-3.5 pl-10 text-sm font-semibold rounded-xl outline-none transition-colors"
-                placeholder="Enter host username"
+                placeholder="Enter username"
               />
             </div>
           </div>
@@ -96,10 +146,35 @@ export default function Login() {
               />
             </div>
           </div>
+          
+          {!isLoginView && !isReserveIntent && (
+            <div>
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Account Type</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setRole('user')}
+                  className={`flex flex-col items-center p-4 border-2 rounded-xl transition-all cursor-pointer ${role === 'user' ? 'border-[#FF385C] bg-rose-50 text-[#FF385C]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                >
+                  <UserRound size={24} className="mb-2" />
+                  <span className="text-sm font-bold">Traveler</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole('host')}
+                  className={`flex flex-col items-center p-4 border-2 rounded-xl transition-all cursor-pointer ${role === 'host' ? 'border-[#FF385C] bg-rose-50 text-[#FF385C]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                >
+                  <Briefcase size={24} className="mb-2" />
+                  <span className="text-sm font-bold">Host</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           <button 
             type="submit"
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-[#FF385C] via-[#E61E4F] to-[#D70466] hover:brightness-110 text-white font-bold py-4 mt-6 rounded-xl text-sm transition-all shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="w-full bg-[#FF385C] hover:bg-[#E61E4F] text-white font-bold py-4 mt-6 rounded-xl text-sm transition-all shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             {isLoading 
               ? (isLoginView ? 'Verifying account...' : 'Creating account...') 
