@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router';
 import { Star, Share, Heart, Award, Key, Calendar, Shield, Coffee, Wifi, Car, Home as HomeIcon, Tv, Waves, MapPin, Check, Info, ChevronLeft } from 'lucide-react';
 import { MOCK_LOCATIONS } from '../data';
 import { format, addDays, differenceInDays } from 'date-fns';
+import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 // Helper to map amenity names to Lucide icons dynamically
 const getAmenityIcon = (name: string) => {
@@ -19,6 +21,8 @@ const getAmenityIcon = (name: string) => {
 export default function LocationDetails() {
   const { listingId, locationId } = useParams();
   const navigate = useNavigate();
+  const { isAuthenticated, token } = useAuth();
+  const { formatPrice } = useCurrency();
   
   const [listing, setListing] = useState<any>(null);
   const location = MOCK_LOCATIONS.find(l => l.id === locationId) || MOCK_LOCATIONS[0];
@@ -72,20 +76,41 @@ export default function LocationDetails() {
   const taxes = listing.occupancyTaxes || 25;
   const totalCost = baseCost - weeklyDiscount + cleaningFee + serviceFee + taxes;
 
-  const handleReservation = () => {
+  const handleReservation = async () => {
+    if (!isAuthenticated) {
+      // Redirect to login with intent to reserve
+      navigate(`/login?intent=reserve&listingId=${listing.id || listing._id}&hostId=${listing.hostId || 'default-host'}&checkIn=${checkIn.toISOString()}&checkOut=${checkOut.toISOString()}&guests=${guests}&totalCost=${totalCost}`);
+      return;
+    }
+
     setIsReserving(true);
-    // Mock API call
-    setTimeout(() => {
-      console.log('Reservation saved to MongoDB', {
-        listingId: listing.id,
-        checkIn,
-        checkOut,
-        guests,
-        totalCost
+    try {
+      const response = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          listingId: listing.id || listing._id,
+          hostId: listing.hostId || 'default-host',
+          checkIn,
+          checkOut,
+          guests,
+          totalCost
+        })
       });
+
+      if (response.ok) {
+        setReserved(true);
+      } else {
+        console.error('Failed to reserve');
+      }
+    } catch (error) {
+      console.error('Reservation error:', error);
+    } finally {
       setIsReserving(false);
-      setReserved(true);
-    }, 1200);
+    }
   };
 
   return (
@@ -336,7 +361,7 @@ export default function LocationDetails() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Total Paid:</span>
-                      <span className="font-bold text-[#FF385C]">R{totalCost.toFixed(0)}</span>
+                      <span className="font-bold text-[#FF385C]">{formatPrice(totalCost)}</span>
                     </div>
                   </div>
 
@@ -352,7 +377,7 @@ export default function LocationDetails() {
                 <>
                   <div className="flex justify-between items-baseline mb-5">
                     <div>
-                      <span className="text-2xl font-bold text-gray-950">R{listing.price}</span>
+                      <span className="text-2xl font-bold text-gray-950">{formatPrice(listing.price)}</span>
                       <span className="text-gray-400 text-xs font-semibold"> night</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs font-bold text-gray-950">
@@ -404,7 +429,7 @@ export default function LocationDetails() {
                   <button 
                     onClick={handleReservation}
                     disabled={isReserving}
-                    className="w-full py-4 rounded-xl font-bold text-sm text-white transition-all bg-gradient-to-r from-[#FF385C] via-[#E61E4F] to-[#D70466] hover:brightness-110 shadow-md active:scale-95 duration-150 disabled:opacity-50"
+                    className="w-full py-4 rounded-xl font-bold text-sm text-white transition-all bg-[#FF385C] hover:bg-[#E61E4F] shadow-md active:scale-95 duration-150 disabled:opacity-50"
                   >
                     {isReserving ? 'Confirming details...' : 'Reserve Stay'}
                   </button>
@@ -414,34 +439,34 @@ export default function LocationDetails() {
                   {/* Pricing Subtotals row-by-row */}
                   <div className="space-y-3 mb-5 text-sm text-gray-600 font-medium">
                     <div className="flex justify-between">
-                      <span className="underline cursor-help">R{listing.price} x {totalNights} nights</span>
-                      <span className="font-bold text-gray-950">R{baseCost}</span>
+                      <span className="underline cursor-help">{formatPrice(listing.price)} x {totalNights} nights</span>
+                      <span className="font-bold text-gray-950">{formatPrice(baseCost)}</span>
                     </div>
                     
                     {weeklyDiscount > 0 && (
                       <div className="flex justify-between text-emerald-600">
                         <span className="underline cursor-help">Weekly stay discount</span>
-                        <span className="font-bold">-R{weeklyDiscount.toFixed(0)}</span>
+                        <span className="font-bold">-{formatPrice(weeklyDiscount)}</span>
                       </div>
                     )}
                     
                     <div className="flex justify-between">
                       <span className="underline cursor-help">Cleaning fee</span>
-                      <span className="font-bold text-gray-950">R{cleaningFee}</span>
+                      <span className="font-bold text-gray-950">{formatPrice(cleaningFee)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="underline cursor-help">Zaiobnb service fee</span>
-                      <span className="font-bold text-gray-950">R{serviceFee}</span>
+                      <span className="font-bold text-gray-950">{formatPrice(serviceFee)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="underline cursor-help">Occupancy taxes and fees</span>
-                      <span className="font-bold text-gray-950">R{taxes}</span>
+                      <span className="font-bold text-gray-950">{formatPrice(taxes)}</span>
                     </div>
                   </div>
                   
                   <div className="border-t border-gray-200 pt-5 flex justify-between font-bold text-lg text-gray-950">
                     <span>Total before taxes</span>
-                    <span>R{totalCost.toFixed(0)}</span>
+                    <span>{formatPrice(totalCost)}</span>
                   </div>
 
                   {/* Informational warning */}
