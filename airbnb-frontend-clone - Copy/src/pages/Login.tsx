@@ -6,6 +6,7 @@ import { ShieldAlert, LogIn, Lock, User } from 'lucide-react';
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [isLoginView, setIsLoginView] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -16,11 +17,13 @@ export default function Login() {
     setError('');
     setIsLoading(true);
 
+    const endpoint = isLoginView ? '/api/login' : '/api/signup';
+
     try {
-      const response = await fetch('/api/login', {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password, role: 'host' })
       });
 
       const data = await response.json();
@@ -29,7 +32,7 @@ export default function Login() {
         login(data.token, data.user, data.isMongo);
         navigate('/admin');
       } else {
-        setError(data.error || 'Failed to login');
+        setError(data.error || `Failed to ${isLoginView ? 'login' : 'sign up'}`);
       }
     } catch (err) {
       setError('Network error occurred. Please try again.');
@@ -45,8 +48,12 @@ export default function Login() {
           <div className="w-12 h-12 bg-rose-50 text-[#FF385C] rounded-full flex items-center justify-center mx-auto mb-4">
             <LogIn size={24} />
           </div>
-          <h1 className="text-2xl font-montserrat font-bold text-gray-950 tracking-tight mb-2">Welcome Back</h1>
-          <p className="text-gray-500 text-sm font-medium">Log in to manage your Zaiobnb host listings</p>
+          <h1 className="text-2xl font-montserrat font-bold text-gray-950 tracking-tight mb-2">
+            {isLoginView ? 'Welcome Back' : 'Create an Account'}
+          </h1>
+          <p className="text-gray-500 text-sm font-medium">
+            {isLoginView ? 'Log in to manage your Zaiobnb host listings' : 'Sign up to become a host'}
+          </p>
         </div>
 
         {error && (
@@ -94,13 +101,21 @@ export default function Login() {
             disabled={isLoading}
             className="w-full bg-gradient-to-r from-[#FF385C] via-[#E61E4F] to-[#D70466] hover:brightness-110 text-white font-bold py-4 mt-6 rounded-xl text-sm transition-all shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
           >
-            {isLoading ? 'Verifying account...' : 'Log In'}
+            {isLoading 
+              ? (isLoginView ? 'Verifying account...' : 'Creating account...') 
+              : (isLoginView ? 'Log In' : 'Sign Up')}
           </button>
         </form>
 
         <div className="mt-8 pt-6 border-t border-gray-100 text-center">
           <p className="text-xs font-medium text-gray-500">
-            Don't have an account? <a href="#" className="font-bold text-[#FF385C] underline hover:text-[#D70466] transition-colors">Sign up as a host</a>
+            {isLoginView ? "Don't have an account? " : "Already have an account? "}
+            <button 
+              onClick={() => setIsLoginView(!isLoginView)} 
+              className="font-bold text-[#FF385C] underline hover:text-[#D70466] transition-colors bg-transparent border-none cursor-pointer"
+            >
+              {isLoginView ? "Sign up as a host" : "Log in instead"}
+            </button>
           </p>
         </div>
       </div>
