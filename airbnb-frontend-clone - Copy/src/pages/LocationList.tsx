@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router';
+import { useParams, Link, useSearchParams } from 'react-router';
 import { Star, Heart, MapPin, Search, SlidersHorizontal, Map, X } from 'lucide-react';
 import { MOCK_LOCATIONS } from '../data';
+import { useCurrency } from '../context/CurrencyContext';
 
 export default function LocationList() {
   const { locationId } = useParams();
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('q');
+  const { formatPrice } = useCurrency();
   
   const location = MOCK_LOCATIONS.find(l => l.id === locationId) || MOCK_LOCATIONS[0];
   const [listings, setListings] = useState<any[]>([]);
@@ -26,8 +30,17 @@ export default function LocationList() {
       })
       .then(data => {
         if (Array.isArray(data)) {
-          const filtered = data.filter((l: any) => l.location === location.id);
-          setListings(filtered.length > 0 ? filtered : data);
+          let filtered = data;
+          if (locationId === 'search' && searchQuery) {
+            filtered = data.filter((l: any) => 
+              l.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+              l.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              MOCK_LOCATIONS.find(loc => loc.id === l.location)?.name.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+          } else {
+            filtered = data.filter((l: any) => l.location === location.id);
+          }
+          setListings(filtered.length > 0 ? filtered : (locationId === 'search' ? [] : data));
         } else {
           console.error('Fetched listings is not an array:', data);
           setListings([]);
@@ -39,7 +52,7 @@ export default function LocationList() {
         setListings([]);
         setIsLoading(false);
       });
-  }, [location.id]);
+  }, [location.id, locationId, searchQuery]);
 
   const toggleFavorite = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -104,7 +117,7 @@ export default function LocationList() {
             </div>
             
             <div className="hidden md:block text-xs text-gray-500 font-medium">
-              Over {listings.length * 20} stays in {location.name}
+              {listings.length === 0 ? 'No stays found' : `Over ${listings.length * 20} stays ${locationId === 'search' ? 'found' : `in ${location.name}`}`}
             </div>
           </div>
         </div>
@@ -115,9 +128,11 @@ export default function LocationList() {
             {/* List View - Left Column */}
             <div className="lg:col-span-7 xl:col-span-8">
               <div className="mb-6">
-                <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1.5">Stays in {location.name}</p>
+                <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1.5">
+                  {locationId === 'search' ? 'Search Results' : `Stays in ${location.name}`}
+                </p>
                 <h1 className="text-2xl md:text-3xl font-montserrat font-extrabold text-gray-950 tracking-tight">
-                  Stays in {location.name}
+                  {locationId === 'search' ? (searchQuery ? `Results for "${searchQuery}"` : 'All Stays') : `Stays in ${location.name}`}
                 </h1>
               </div>
 
@@ -201,10 +216,10 @@ export default function LocationList() {
                           
                           <div className="text-right">
                             <div className="font-bold text-lg text-gray-950">
-                              R{listing.price} <span className="font-normal text-xs text-gray-500">/ night</span>
+                              {formatPrice(listing.price)} <span className="font-normal text-xs text-gray-500">/ night</span>
                             </div>
                             <div className="text-xs text-gray-400 underline mt-0.5">
-                              R{listing.price * 6} total before taxes
+                              {formatPrice(listing.price * 6)} total before taxes
                             </div>
                           </div>
                         </div>
@@ -283,7 +298,7 @@ export default function LocationList() {
                           : 'bg-white text-gray-950 border-gray-200 hover:scale-105 z-20'
                       }`}
                     >
-                      R{listing.price}
+                      {formatPrice(listing.price)}
                     </button>
                   );
                 })}
@@ -322,7 +337,7 @@ export default function LocationList() {
                       </div>
                       
                       <div className="flex justify-between items-baseline mt-2 pt-2 border-t border-gray-50">
-                        <p className="text-sm font-bold text-gray-950">R{selectedMapListing.price} <span className="text-xs text-gray-500 font-normal">night</span></p>
+                        <p className="text-sm font-bold text-gray-950">{formatPrice(selectedMapListing.price)} <span className="text-xs text-gray-500 font-normal">night</span></p>
                         <Link 
                           to={`/locations/${location.id}/listing/${selectedMapListing.id}`}
                           className="text-xs text-[#FF385C] font-semibold underline hover:text-[#D70466]"
