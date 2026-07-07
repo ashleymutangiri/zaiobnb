@@ -15,6 +15,7 @@ interface ToastType {
 interface AuthContextType {
   user: User | null;
   token: string | null;
+  isAuthenticated: boolean;
   login: (token: string, user: User, isMongo?: boolean) => void;
   logout: () => void;
   showToast: (message: string, type?: 'success' | 'info' | 'error') => void;
@@ -23,18 +24,14 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [toast, setToast] = useState<ToastType | null>(null);
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem('token');
+  const [user, setUser] = useState<User | null>(() => {
     const storedUser = localStorage.getItem('user');
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
+  const [toast, setToast] = useState<ToastType | null>(null);
+  
+  const isAuthenticated = !!token && !!user;
 
   useEffect(() => {
     if (toast) {
@@ -67,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, showToast }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated, login, logout, showToast }}>
       {children}
       <AnimatePresence>
         {toast && (
