@@ -1,6 +1,6 @@
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Search, Globe, Menu, User, LogOut, LayoutDashboard, ClipboardList } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
@@ -8,6 +8,11 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [showHostForm, setShowHostForm] = useState(false);
+  const [hostFormSubmitted, setHostFormSubmitted] = useState(false);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -21,6 +26,23 @@ export default function Navbar() {
     };
   }, []);
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/locations/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchExpanded(false);
+    }
+  };
+
+  const handleHostFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setHostFormSubmitted(true);
+    setTimeout(() => {
+      setShowHostForm(false);
+      setHostFormSubmitted(false);
+    }, 2000);
+  };
+
   return (
     <header className="border-b border-gray-200 bg-white sticky top-0 z-50 shadow-sm transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
@@ -33,25 +55,47 @@ export default function Navbar() {
         </Link>
 
         {/* Central Search Pill */}
-        <div 
-          onClick={() => navigate('/locations/1')}
-          className="flex items-center border border-gray-200 rounded-full py-1.5 pl-5 pr-1.5 shadow-sm hover:shadow-md transition-all cursor-pointer bg-white"
-        >
-          <span className="text-sm font-semibold text-gray-900 px-3 border-r border-gray-200">Anywhere</span>
-          <span className="text-sm font-semibold text-gray-900 px-3 border-r border-gray-200 hidden sm:inline">Any week</span>
-          <span className="text-sm font-medium text-gray-500 px-3 hidden md:inline">Add guests</span>
-          <div className="bg-[#FF385C] text-white p-2 rounded-full hover:bg-[#E61E4F] transition-colors ml-1">
-            <Search size={14} className="stroke-[3]" />
+        {isSearchExpanded ? (
+          <form 
+            onSubmit={handleSearchSubmit}
+            className="flex items-center border-2 border-[#FF385C] rounded-full py-1.5 pl-5 pr-1.5 shadow-md bg-white w-full max-w-md mx-4 transition-all"
+          >
+            <input 
+              type="text"
+              autoFocus
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onBlur={() => {
+                if (!searchQuery) setIsSearchExpanded(false);
+              }}
+              placeholder="Search destinations, property types..."
+              className="flex-grow outline-none text-sm font-medium text-gray-900 bg-transparent px-2"
+            />
+            <button type="submit" className="bg-[#FF385C] text-white p-2 rounded-full hover:bg-[#E61E4F] transition-colors ml-1 cursor-pointer">
+              <Search size={14} className="stroke-[3]" />
+            </button>
+          </form>
+        ) : (
+          <div 
+            onClick={() => setIsSearchExpanded(true)}
+            className="flex items-center border border-gray-200 rounded-full py-1.5 pl-5 pr-1.5 shadow-sm hover:shadow-md transition-all cursor-pointer bg-white"
+          >
+            <span className="text-sm font-semibold text-gray-900 px-3 border-r border-gray-200">Anywhere</span>
+            <span className="text-sm font-semibold text-gray-900 px-3 border-r border-gray-200 hidden sm:inline">Any week</span>
+            <span className="text-sm font-medium text-gray-500 px-3 hidden md:inline">Add guests</span>
+            <div className="bg-[#FF385C] text-white p-2 rounded-full hover:bg-[#E61E4F] transition-colors ml-1">
+              <Search size={14} className="stroke-[3]" />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* User Menu / Controls */}
         <div className="flex items-center gap-3 relative" ref={dropdownRef}>
           <button 
-            onClick={() => navigate('/locations/1')}
-            className="hidden lg:block text-sm font-semibold hover:bg-gray-50 px-4 py-2.5 rounded-full transition-colors text-gray-800"
+            onClick={() => setShowHostForm(true)}
+            className="hidden lg:block text-sm font-semibold hover:bg-gray-50 px-4 py-2.5 rounded-full transition-colors text-gray-800 cursor-pointer"
           >
-            Airbnb your home
+            Zaiobnb your home
           </button>
           
           <button className="hover:bg-gray-50 p-2.5 rounded-full text-gray-700 hidden sm:block transition-colors">
@@ -130,10 +174,10 @@ export default function Navbar() {
                     Sign up
                   </Link>
                   <button 
-                    onClick={() => { navigate('/locations/1'); setMenuOpen(false); }}
-                    className="px-4 py-3 hover:bg-gray-50 font-medium text-sm text-gray-600 text-left transition-colors"
+                    onClick={() => { setShowHostForm(true); setMenuOpen(false); }}
+                    className="px-4 py-3 hover:bg-gray-50 font-medium text-sm text-gray-600 text-left transition-colors cursor-pointer"
                   >
-                    Airbnb your home
+                    Zaiobnb your home
                   </button>
                   <button 
                     onClick={() => setMenuOpen(false)} 
@@ -147,6 +191,49 @@ export default function Navbar() {
           )}
         </div>
       </div>
+
+      {/* Host Form Modal */}
+      {showHostForm && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
+            <button 
+              onClick={() => setShowHostForm(false)}
+              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+            <div className="p-6">
+              <h2 className="text-2xl font-bold font-montserrat text-gray-900 mb-2">Zaiobnb your home</h2>
+              <p className="text-gray-500 text-sm mb-6">Become a host and earn extra income.</p>
+              
+              {hostFormSubmitted ? (
+                <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 text-center font-medium">
+                  Application submitted successfully! We'll be in touch soon.
+                </div>
+              ) : (
+                <form onSubmit={handleHostFormSubmit} className="flex flex-col gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
+                    <select required className="w-full border border-gray-300 rounded-xl px-4 py-2.5 outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900">
+                      <option value="">Select a type</option>
+                      <option value="apartment">Apartment</option>
+                      <option value="house">House</option>
+                      <option value="villa">Villa</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <input required type="text" placeholder="City or region" className="w-full border border-gray-300 rounded-xl px-4 py-2.5 outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900" />
+                  </div>
+                  <button type="submit" className="w-full bg-[#FF385C] hover:bg-[#E61E4F] text-white font-bold py-3 mt-2 rounded-xl text-sm transition-all shadow-md active:scale-95 cursor-pointer">
+                    Submit Application
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
