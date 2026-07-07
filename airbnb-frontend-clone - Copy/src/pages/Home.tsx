@@ -113,8 +113,8 @@ export default function Home() {
 
         {/* Categories Bar */}
         <div className="border-b border-gray-100 bg-white sticky top-20 z-30 shadow-sm py-4">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-6 overflow-x-auto hide-scrollbar">
-            <div className="flex items-center gap-8 md:gap-12 py-1">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-6 md:gap-12 py-1 overflow-x-auto hide-scrollbar flex-grow mr-2">
               {CATEGORIES.map((cat) => {
                 const IconComponent = cat.icon;
                 const isSelected = activeCategory === cat.id;
@@ -122,7 +122,7 @@ export default function Home() {
                   <button
                     key={cat.id}
                     onClick={() => setActiveCategory(cat.id)}
-                    className={`flex flex-col items-center gap-2 cursor-pointer border-b-2 pb-2.5 text-xs transition-all duration-200 outline-none whitespace-nowrap group ${
+                    className={`flex flex-col items-center gap-2 cursor-pointer border-b-2 pb-2.5 text-xs transition-all duration-200 outline-none whitespace-nowrap flex-shrink-0 group ${
                       isSelected 
                         ? 'border-gray-950 text-gray-950 font-semibold' 
                         : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-200'
@@ -142,10 +142,10 @@ export default function Home() {
             
             <button 
               onClick={() => navigate('/locations/1')}
-              className="border border-gray-200 rounded-xl px-4 py-2 text-xs font-semibold hover:border-gray-950 hover:bg-gray-50 transition-all flex items-center gap-2"
+              className="border border-gray-200 rounded-xl px-3 sm:px-4 py-2 text-xs font-semibold hover:border-gray-950 hover:bg-gray-50 transition-all flex items-center gap-2 flex-shrink-0"
             >
               <Compass size={14} className="text-gray-600" />
-              <span>Filters</span>
+              <span className="hidden sm:inline">Filters</span>
             </button>
           </div>
         </div>
