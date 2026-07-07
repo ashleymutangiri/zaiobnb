@@ -1,7 +1,10 @@
 import { Globe } from 'lucide-react';
 import { FOOTER_LINKS } from '../constants';
+import { useCurrency } from '../context/CurrencyContext';
 
 export default function Footer() {
+  const { currency, setCurrency } = useCurrency();
+
   return (
     <footer className="bg-gray-50 border-t border-gray-200 mt-20 pt-16 pb-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -21,7 +24,6 @@ export default function Footer() {
             </div>
           ))}
         </div>
-
         <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-sm text-gray-500">
             <span className="font-medium text-gray-950">© 2026 Zaiobnb, Inc.</span>
@@ -29,20 +31,24 @@ export default function Footer() {
             <div className="flex gap-3">
               <a href="#" className="hover:underline">Privacy</a>
               <span className="text-gray-300">·</span>
-              <a href="#" className="hover:underline">Terms</a>
+              <a href="#" className="hover:underline">Capstone Project</a>
               <span className="text-gray-300">·</span>
-              <a href="#" className="hover:underline">Sitemap</a>
+              <a href="#" className="hover:underline">Made By Ashley</a>
             </div>
           </div>
-
           <div className="flex items-center gap-6 font-semibold text-gray-700">
             <button className="flex items-center gap-2 text-sm hover:underline">
               <Globe size={16} />
               <span>English (US)</span>
             </button>
-            <button className="text-sm hover:underline">
-              $ USD
-            </button>
+            <select
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value as 'USD' | 'ZAR')}
+              className="text-sm font-semibold bg-transparent border-none outline-none cursor-pointer hover:underline appearance-none"
+            >
+              <option value="USD">$ USD</option>
+              <option value="ZAR">R ZAR</option>
+            </select>
             <div className="flex gap-4">
               {/* Social icons */}
               <a href="#" className="text-gray-400 hover:text-gray-900 transition-colors">
