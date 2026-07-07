@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Routes, Route, Link, useNavigate, useParams } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import { Trash2, Edit, Plus, Image as ImageIcon, MapPin, Building, DollarSign, Layout, ChevronRight, Sliders, Settings } from 'lucide-react';
+import { useCurrency } from '../context/CurrencyContext';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { formatPrice } = useCurrency();
 
   useEffect(() => {
     if (!user || (user.role !== 'admin' && user.role !== 'host')) {
@@ -30,7 +32,7 @@ export default function AdminDashboard() {
           
           <Link 
             to="/admin/create" 
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#FF385C] via-[#E61E4F] to-[#D70466] text-white px-5 py-3 rounded-xl font-bold text-sm shadow-md hover:scale-105 active:scale-95 transition-all w-full sm:w-auto"
+            className="flex items-center justify-center gap-2 bg-[#FF385C] hover:bg-[#E61E4F] text-white px-5 py-3 rounded-xl font-bold text-sm shadow-md hover:scale-105 active:scale-95 transition-all w-full sm:w-auto"
           >
             <Plus size={16} />
             <span>Create Listing</span>
@@ -50,6 +52,7 @@ export default function AdminDashboard() {
 function ListingsList() {
   const [listings, setListings] = useState<any[]>([]);
   const { token } = useAuth();
+  const { formatPrice } = useCurrency();
 
   const fetchListings = async () => {
     try {
@@ -124,7 +127,7 @@ function ListingsList() {
                   </span>
                 </td>
                 <td className="p-4 sm:p-5 font-bold text-gray-950 text-sm">
-                  R{listing.price} <span className="text-xs text-gray-400 font-normal">night</span>
+                  {formatPrice(listing.price)} <span className="text-xs text-gray-400 font-normal">night</span>
                 </td>
                 <td className="p-4 sm:p-5">
                   <div className="flex justify-end gap-3.5">
@@ -311,7 +314,7 @@ function ListingForm() {
           </button>
           <button 
             type="submit" 
-            className="bg-gradient-to-r from-[#FF385C] via-[#E61E4F] to-[#D70466] hover:brightness-110 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer"
+            className="bg-[#FF385C] hover:bg-[#E61E4F] text-white px-6 py-3 rounded-xl font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer"
           >
             Save Listing
           </button>
