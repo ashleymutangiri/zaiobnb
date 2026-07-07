@@ -1,6 +1,5 @@
 import express from "express";
 import path from "path";
-import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
@@ -12,9 +11,6 @@ import { User } from "./server/models/User.js";
 import { Accommodation } from "./server/models/Accommodation.js";
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 async function seedDatabase() {
   const usersCount = await User.countDocuments();
