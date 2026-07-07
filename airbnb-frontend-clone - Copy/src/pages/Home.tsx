@@ -3,6 +3,7 @@ import { Search, Heart, Star, Compass, Waves, Flame, Home as CabinIcon, Key, Wif
 import { useNavigate } from 'react-router';
 import { MOCK_LOCATIONS } from '../data';
 import { FUTURE_GETAWAYS_DATA, FUTURE_GETAWAYS_TABS } from '../constants';
+import { useCurrency } from '../context/CurrencyContext';
 
 const CATEGORIES = [
   { id: 'all', name: 'Trending', icon: Flame },
@@ -15,6 +16,7 @@ const CATEGORIES = [
 
 export default function Home() {
   const navigate = useNavigate();
+  const { formatPrice } = useCurrency();
   const [activeTab, setActiveTab] = useState(0);
   const [activeCategory, setActiveCategory] = useState('all');
   const [listings, setListings] = useState<any[]>([]);
@@ -114,7 +116,7 @@ export default function Home() {
         {/* Categories Bar */}
         <div className="border-b border-gray-100 bg-white sticky top-20 z-30 shadow-sm py-4">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-6 md:gap-12 py-1 overflow-x-auto hide-scrollbar flex-grow mr-2">
+            <div className="flex items-center gap-6 md:gap-12 lg:justify-between py-1 overflow-x-auto hide-scrollbar flex-grow mr-2">
               {CATEGORIES.map((cat) => {
                 const IconComponent = cat.icon;
                 const isSelected = activeCategory === cat.id;
@@ -241,7 +243,7 @@ export default function Home() {
                       <p className="text-sm text-gray-400">{listing.guests} guests · {listing.bedrooms} bed{listing.bedrooms > 1 ? 's' : ''}</p>
                       
                       <p className="text-sm text-gray-950 font-semibold mt-1.5">
-                        R{listing.price} <span className="font-normal text-gray-500">night</span>
+                        {formatPrice(listing.price)} <span className="font-normal text-gray-500">night</span>
                       </p>
                     </div>
                   );
